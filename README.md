@@ -1,36 +1,86 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AI Image Generator with Gemini
+
+A modern Next.js application that generates images using Google's Gemini AI and stores them in MongoDB. Built with shadcn/ui components and optimized for minimal API costs.
+
+## Features
+
+- 🎨 **AI Image Generation** - Generate images using Google's Gemini AI
+- 💾 **MongoDB Storage** - All generated images are stored in MongoDB
+- 💰 **Cost Optimized** - Configured to use the smallest image sizes to minimize API costs
+- 🎯 **Modern UI** - Built with shadcn/ui components and Tailwind CSS
+- ⚡ **Next.js 14** - Uses App Router for optimal performance
+- 🔄 **Real-time Updates** - Images appear instantly in the gallery
+- 📱 **Responsive Design** - Works great on desktop and mobile
+
+## Tech Stack
+
+- **Framework**: Next.js 14 with App Router
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS + shadcn/ui
+- **Database**: MongoDB with Mongoose
+- **AI**: Google Gemini API
+- **Icons**: Lucide React
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- Node.js 18+ 
+- MongoDB (local or Atlas)
+- Google AI API Key
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Installation
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. **Install dependencies:**
+   ```bash
+   npm install
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+2. **Set up environment variables:**
+   ```bash
+   cp .env.example .env.local
+   ```
+   
+   Fill in your environment variables in `.env.local`:
+   ```
+   GOOGLE_AI_API_KEY=your_google_ai_api_key_here
+   MONGODB_URI=your_mongodb_connection_string_here
+   ```
 
-## Learn More
+3. **Get your Google AI API Key:**
+   - Visit [Google AI Studio](https://aistudio.google.com/app/apikey)
+   - Create a new API key
+   - Copy it to your `.env.local` file
 
-To learn more about Next.js, take a look at the following resources:
+4. **Set up MongoDB:**
+   - **Local MongoDB**: `mongodb://localhost:27017/imagegeneration`
+   - **MongoDB Atlas**: `mongodb+srv://username:password@cluster.mongodb.net/imagegeneration`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+5. **Run the development server:**
+   ```bash
+   npm run dev
+   ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+6. **Open [http://localhost:3000](http://localhost:3000)** in your browser
 
-## Deploy on Vercel
+## Usage
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. **Generate Images**: Enter a descriptive prompt and click "Generate Image"
+2. **View Gallery**: All generated images appear in the gallery with their prompts
+3. **Download Images**: Click the download button to save images locally
+4. **Delete Images**: Remove unwanted images from the database
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Cost Optimization
+
+This application is configured to minimize API costs:
+
+- **Single Image Generation**: Only generates 1 image per request by default
+- **Smallest Size**: Uses optimized settings for minimal image dimensions
+- **Square Format**: Uses 1:1 aspect ratio which is typically most cost-effective
+
+## Environment Variables
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `GOOGLE_AI_API_KEY` | Your Google AI API key for Gemini | Yes |
+| `MONGODB_URI` | MongoDB connection string | Yes |
