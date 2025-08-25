@@ -18,6 +18,17 @@ export interface GenerateImageOptions {
 export interface GeneratedImageResult {
   imageBytes: string;
   mimeType: string;
+  metadata: {
+    model: string;
+    generationTime: number;
+    imageSize: string;
+    aspectRatio?: string;
+    estimatedCost?: number;
+    outputTokens?: number;
+    cost?: number;
+    quality?: string;
+    style?: string;
+  };
 }
 
 interface ApiError {
@@ -36,7 +47,7 @@ export async function generateImage({
 
     // Try different model names in order of preference
     const modelNames = [
-        'imagen-4.0-generate-001',
+      'imagen-4.0-generate-001',
       'imagen-3.0-fast-generate-001',
       'imagen-3.0-generate-001', 
       'imagen-2.0-generate-001',
@@ -74,6 +85,13 @@ export async function generateImage({
           .map(img => ({
             imageBytes: img.image!.imageBytes!,
             mimeType: 'image/png',
+            metadata: {
+              model: modelName,
+              generationTime: 0,
+              imageSize: '256x256', // Default for cost efficiency
+              aspectRatio: '1:1',
+              estimatedCost: 0.01, // Rough estimate
+            },
           }));
           
       } catch (error: unknown) {
@@ -118,6 +136,9 @@ export async function generateImage({
     throw new Error(`Failed to generate image: ${errorObj?.message || 'Unknown error'}`);
   }
 }
+
+// Export alias for compatibility
+export const generateImageWithGemini = generateImage;
 
 // Note: The Google GenAI SDK might not support image generation yet
 // We may need to use a different approach or API

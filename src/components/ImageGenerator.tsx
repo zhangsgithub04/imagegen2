@@ -8,11 +8,16 @@ import { Label } from '@/components/ui/label';
 import { generateAndSaveImage, type GenerateImageResponse } from '@/app/actions';
 import { Loader2, ImageIcon, AlertCircle } from 'lucide-react';
 
-export default function ImageGenerator() {
+interface ImageGeneratorProps {
+  onImageGenerated?: () => void;
+}
+
+export default function ImageGenerator({ onImageGenerated }: ImageGeneratorProps) {
   const [prompt, setPrompt] = useState('');
   const [loading, setLoading] = useState(false);
   const [response, setResponse] = useState<GenerateImageResponse | null>(null);
-  const [useOpenAI, setUseOpenAI] = useState(false);
+  const [useOpenAI, setUseOpenAI] = useState(true); // Default to OpenAI since Gemini is not available
+  const [isPrivate, setIsPrivate] = useState(false); // Default to public
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,11 +31,12 @@ export default function ImageGenerator() {
     setResponse(null);
 
     try {
-      const result = await generateAndSaveImage(prompt, useOpenAI);
+      const result = await generateAndSaveImage(prompt, useOpenAI, isPrivate);
       setResponse(result);
       
       if (result.success) {
         setPrompt(''); // Clear the prompt on success
+        onImageGenerated?.(); // Trigger gallery refresh
       }
     } catch (error) {
       console.error('Unexpected error:', error);
@@ -78,7 +84,7 @@ export default function ImageGenerator() {
                   onChange={() => setUseOpenAI(false)}
                   disabled={loading}
                 />
-                <span className="text-sm">Google Gemini (requires billing)</span>
+                <span className="text-sm text-gray-500">Google Gemini (not available)</span>
               </label>
               <label className="flex items-center space-x-2">
                 <input
@@ -88,9 +94,30 @@ export default function ImageGenerator() {
                   onChange={() => setUseOpenAI(true)}
                   disabled={loading}
                 />
-                <span className="text-sm">OpenAI DALL-E 3</span>
+                <span className="text-sm font-medium">OpenAI DALL-E (recommended)</span>
               </label>
             </div>
+          </div>
+
+          {/* Privacy Toggle */}
+          <div className="space-y-2">
+            <Label>Privacy Settings</Label>
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="private"
+                checked={isPrivate}
+                onChange={(e) => setIsPrivate(e.target.checked)}
+                disabled={loading}
+                className="rounded border-gray-300"
+              />
+              <Label htmlFor="private" className="text-sm">
+                Make this image private (only you can see it)
+              </Label>
+            </div>
+            <p className="text-xs text-gray-500">
+              {isPrivate ? 'Private: Only visible to you' : 'Public: Visible to everyone in the gallery'}
+            </p>
           </div>
           
           <Button 
@@ -133,16 +160,9 @@ export default function ImageGenerator() {
 
         {/* API Information */}
         <div className="mt-4 space-y-2">
-          <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
-            <p className="text-blue-800 text-xs">
-              💡 <strong>Gemini:</strong> Requires Google Cloud billing setup. 
-              Cost-optimized for smallest image sizes.
-            </p>
-          </div>
-          
-          <div className="p-3 bg-purple-50 border border-purple-200 rounded-md">
-            <p className="text-purple-800 text-xs">
-              🎨 <strong>OpenAI DALL-E 3:</strong> Easier setup, $0.04 per image (1024x1024). 
+          <div className="p-3 bg-green-50 border border-green-200 rounded-md">
+            <p className="text-green-800 text-xs">
+              ✅ <strong>OpenAI:</strong> DALL-E 2 (256x256, $0.016) or DALL-E 3 (1024x1024, $0.04). 
               Add OPENAI_API_KEY to .env.local
             </p>
           </div>

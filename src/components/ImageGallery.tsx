@@ -4,23 +4,78 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { SerializedImage } from '@/models/Image';
-import { deleteImage } from '@/app/actions';
-import { Images, Trash2, Download, Calendar } from 'lucide-react';
+import { deleteImage, getRecentImages, toggleImagePrivacy } from '@/app/actions';
+import { Images, Trash2, Download, Calendar, Clock, Zap, ImageIcon, DollarSign, Cpu, User, Lock, Unlock } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 import Image from 'next/image';
 
 interface ImageGalleryProps {
-  initialImages: SerializedImage[];
+  refreshTrigger?: number;
 }
 
-export default function ImageGallery({ initialImages }: ImageGalleryProps) {
-  const [images, setImages] = useState(initialImages);
+export default function ImageGallery({ refreshTrigger }: ImageGalleryProps) {
+  const [images, setImages] = useState<SerializedImage[]>([]);
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
+  const [togglingPrivacyIds, setTogglingPrivacyIds] = useState<Set<string>>(new Set());
   const [mounted, setMounted] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
 
   // Handle hydration by only showing formatted dates after mounting
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const fetchImages = async () => {
+    try {
+      setLoading(true);
+      const fetchedImages = await getRecentImages();
+      setImages(fetchedImages);
+    } catch (error) {
+      console.error('Error fetching images:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchImages();
+  }, []);
+
+  // Refresh when refreshTrigger changes
+  useEffect(() => {
+    if (refreshTrigger && refreshTrigger > 0) {
+      fetchImages();
+    }
+  }, [refreshTrigger]);
+
+  const handleTogglePrivacy = async (imageId: string) => {
+    if (!imageId) return;
+    
+    setTogglingPrivacyIds(prev => new Set(prev).add(imageId));
+    
+    try {
+      const result = await toggleImagePrivacy(imageId);
+      
+      if (result.success) {
+        setImages(prev => prev.map(img => 
+          img._id === imageId 
+            ? { ...img, isPrivate: result.isPrivate || false }
+            : img
+        ));
+      } else {
+        console.error('Failed to toggle image privacy:', result.error);
+      }
+    } catch (error) {
+      console.error('Error toggling image privacy:', error);
+    } finally {
+      setTogglingPrivacyIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(imageId);
+        return newSet;
+      });
+    }
+  };
 
   const handleDelete = async (imageId: string) => {
     if (!imageId) return;
@@ -74,6 +129,32 @@ export default function ImageGallery({ initialImages }: ImageGalleryProps) {
     });
   };
 
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 4,
+    }).format(amount);
+  };
+
+  if (loading) {
+    return (
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Images className="w-5 h-5" />
+            Loading Images...
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8">
+            <div className="text-gray-500">Loading images...</div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="w-full">
       <CardHeader>
@@ -110,11 +191,30 @@ export default function ImageGallery({ initialImages }: ImageGalleryProps) {
 
                 {/* Image Info */}
                 <div className="space-y-2">
-                  <div className="flex items-start gap-2">
-                    <Calendar className="w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" />
-                    <span className="text-xs text-gray-500">
-                      {formatDate(image.createdAt)}
-                    </span>
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-2">
+                      <Calendar className="w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" />
+                      <span className="text-xs text-gray-500">
+                        {formatDate(image.createdAt)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
+                        <User className="w-3 h-3 text-gray-500" />
+                        <span className="text-xs text-gray-600">{image.username}</span>
+                      </div>
+                      {image.isPrivate ? (
+                        <div className="flex items-center gap-1 text-red-600">
+                          <Lock className="w-3 h-3" />
+                          <span className="text-xs">Private</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1 text-green-600">
+                          <Unlock className="w-3 h-3" />
+                          <span className="text-xs">Public</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                   
                   <div>
@@ -125,30 +225,102 @@ export default function ImageGallery({ initialImages }: ImageGalleryProps) {
                       {image.prompt}
                     </p>
                   </div>
+
+                  {/* Metadata Section */}
+                  <div className="grid grid-cols-2 gap-3 pt-2 text-xs">
+                    <div className="flex items-center gap-1">
+                      <Cpu className="w-3 h-3 text-gray-500" />
+                      <span className="text-gray-500">Provider:</span>
+                      <span className="font-medium capitalize">{image.apiProvider}</span>
+                    </div>
+
+                    {image.model && (
+                      <div className="flex items-center gap-1">
+                        <span className="text-gray-500">Model:</span>
+                        <span className="font-medium">{image.model}</span>
+                      </div>
+                    )}
+
+                    {image.imageSize && (
+                      <div className="flex items-center gap-1">
+                        <ImageIcon className="w-3 h-3 text-gray-500" />
+                        <span className="text-gray-500">Size:</span>
+                        <span className="font-medium">{image.imageSize}</span>
+                      </div>
+                    )}
+
+                    {image.generationTime && (
+                      <div className="flex items-center gap-1">
+                        <Clock className="w-3 h-3 text-gray-500" />
+                        <span className="text-gray-500">Time:</span>
+                        <span className="font-medium">{image.generationTime}ms</span>
+                      </div>
+                    )}
+
+                    {image.outputTokens && (
+                      <div className="flex items-center gap-1">
+                        <Zap className="w-3 h-3 text-gray-500" />
+                        <span className="text-gray-500">Tokens:</span>
+                        <span className="font-medium">{image.outputTokens}</span>
+                      </div>
+                    )}
+
+                    {image.cost && (
+                      <div className="flex items-center gap-1">
+                        <DollarSign className="w-3 h-3 text-gray-500" />
+                        <span className="text-gray-500">Cost:</span>
+                        <span className="font-medium">{formatCurrency(image.cost)}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex justify-end gap-2 pt-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDownload(image)}
-                    className="flex items-center gap-1"
-                  >
-                    <Download className="w-3 h-3" />
-                    Download
-                  </Button>
+                <div className="flex justify-between items-center pt-2">
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDownload(image)}
+                      className="flex items-center gap-1"
+                    >
+                      <Download className="w-3 h-3" />
+                      Download
+                    </Button>
+                  </div>
                   
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => handleDelete(image._id!)}
-                    disabled={deletingIds.has(image._id!)}
-                    className="flex items-center gap-1"
-                  >
-                    <Trash2 className="w-3 h-3" />
-                    {deletingIds.has(image._id!) ? 'Deleting...' : 'Delete'}
-                  </Button>
+                  <div className="flex gap-2">
+                    {/* Show privacy toggle only for the user's own images */}
+                    {user && image.userId === user.id && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleTogglePrivacy(image._id!)}
+                        disabled={togglingPrivacyIds.has(image._id!)}
+                        className="flex items-center gap-1"
+                      >
+                        {image.isPrivate ? <Unlock className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
+                        {togglingPrivacyIds.has(image._id!) 
+                          ? 'Updating...' 
+                          : image.isPrivate ? 'Make Public' : 'Make Private'
+                        }
+                      </Button>
+                    )}
+                    
+                    {/* Show delete button only for the user's own images */}
+                    {user && image.userId === user.id && (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDelete(image._id!)}
+                        disabled={deletingIds.has(image._id!)}
+                        className="flex items-center gap-1"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        {deletingIds.has(image._id!) ? 'Deleting...' : 'Delete'}
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
