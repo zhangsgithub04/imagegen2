@@ -31,13 +31,6 @@ export default function SignUpForm({ onToggleForm }: SignUpFormProps) {
     setLoading(true);
     setError('');
 
-    // Validate passcode
-    if (passcode !== 'bdx_sz') {
-      setError('Invalid access passcode');
-      setLoading(false);
-      return;
-    }
-
     // Validate passwords match
     if (password !== confirmPassword) {
       setError('Passwords do not match');
@@ -45,7 +38,7 @@ export default function SignUpForm({ onToggleForm }: SignUpFormProps) {
       return;
     }
 
-    const result = await signup(email, username, password);
+    const result = await signup(email, username, password, passcode);
 
     if (result.success) {
       // Redirect to main page on successful signup

@@ -15,8 +15,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate passcode
-    if (passcode !== 'bdx_sz') {
+    // Validate passcode against environment variable
+    const expectedPasscode = process.env.ACCESS_PASSCODE;
+    if (!expectedPasscode) {
+      return NextResponse.json(
+        { error: 'Access passcode not configured' },
+        { status: 500 }
+      );
+    }
+
+    if (passcode !== expectedPasscode) {
       return NextResponse.json(
         { error: 'Invalid access passcode' },
         { status: 401 }

@@ -5,13 +5,29 @@ import { hashPassword, generateToken, validateEmail, validateUsername, validateP
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, username, password } = await request.json();
+    const { email, username, password, passcode } = await request.json();
 
     // Validate input
-    if (!email || !username || !password) {
+    if (!email || !username || !password || !passcode) {
       return NextResponse.json(
-        { error: 'Email, username, and password are required' },
+        { error: 'Email, username, password, and passcode are required' },
         { status: 400 }
+      );
+    }
+
+    // Validate passcode against environment variable
+    const expectedPasscode = process.env.ACCESS_PASSCODE;
+    if (!expectedPasscode) {
+      return NextResponse.json(
+        { error: 'Access passcode not configured' },
+        { status: 500 }
+      );
+    }
+
+    if (passcode !== expectedPasscode) {
+      return NextResponse.json(
+        { error: 'Invalid access passcode' },
+        { status: 401 }
       );
     }
 
