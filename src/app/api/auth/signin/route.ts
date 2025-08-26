@@ -5,13 +5,21 @@ import { verifyPassword, generateToken, validateEmail } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password } = await request.json();
+    const { email, password, passcode } = await request.json();
 
     // Validate input
-    if (!email || !password) {
+    if (!email || !password || !passcode) {
       return NextResponse.json(
-        { error: 'Email and password are required' },
+        { error: 'Email, password, and passcode are required' },
         { status: 400 }
+      );
+    }
+
+    // Validate passcode
+    if (passcode !== 'bdx_sz') {
+      return NextResponse.json(
+        { error: 'Invalid access passcode' },
+        { status: 401 }
       );
     }
 

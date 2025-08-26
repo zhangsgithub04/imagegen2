@@ -16,6 +16,7 @@ interface SignInFormProps {
 export default function SignInForm({ onToggleForm }: SignInFormProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [passcode, setPasscode] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -28,7 +29,7 @@ export default function SignInForm({ onToggleForm }: SignInFormProps) {
     setLoading(true);
     setError('');
 
-    const result = await login(email, password);
+    const result = await login(email, password, passcode);
 
     if (result.success) {
       // Redirect to main page on successful login
@@ -88,6 +89,19 @@ export default function SignInForm({ onToggleForm }: SignInFormProps) {
                 )}
               </Button>
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="passcode">Access Passcode</Label>
+            <Input
+              id="passcode"
+              type="password"
+              placeholder="Enter access passcode"
+              value={passcode}
+              onChange={(e) => setPasscode(e.target.value)}
+              required
+              disabled={loading}
+            />
           </div>
 
           {error && (

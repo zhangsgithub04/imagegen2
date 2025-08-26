@@ -18,6 +18,7 @@ export default function SignUpForm({ onToggleForm }: SignUpFormProps) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [passcode, setPasscode] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -29,6 +30,13 @@ export default function SignUpForm({ onToggleForm }: SignUpFormProps) {
     e.preventDefault();
     setLoading(true);
     setError('');
+
+    // Validate passcode
+    if (passcode !== 'bdx_sz') {
+      setError('Invalid access passcode');
+      setLoading(false);
+      return;
+    }
 
     // Validate passwords match
     if (password !== confirmPassword) {
@@ -56,6 +64,22 @@ export default function SignUpForm({ onToggleForm }: SignUpFormProps) {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="passcode">Access Passcode</Label>
+            <Input
+              id="passcode"
+              type="password"
+              placeholder="Enter access passcode"
+              value={passcode}
+              onChange={(e) => setPasscode(e.target.value)}
+              required
+              disabled={loading}
+            />
+            <p className="text-xs text-gray-500">
+              Required to create an account
+            </p>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
